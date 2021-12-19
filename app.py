@@ -1,5 +1,8 @@
 import re
 from collections import defaultdict
+from collections import OrderedDict
+from rank_bm25 import BM25Okapi
+from operator import getitem
 
 PATH_TO_CRAN_TXT = './data/cran.all.1400'
 PATH_TO_CRAN_QRY = './data/cran.qry'
@@ -25,7 +28,7 @@ txt_list = get_data(PATH_TO_CRAN_TXT, ID_marker)
 qry_list = get_data(PATH_TO_CRAN_QRY, ID_marker)
 
 chunk_start = re.compile('\.[A,B,T,W]')
-txt_data = defaultdict(dict)
+txt_data = []
 
 for line in txt_list:
     entries = re.split(chunk_start, line)
@@ -34,7 +37,32 @@ for line in txt_list:
     author = entries[2]
     publication_date = entries[3]
     text = entries[4]
-    txt_data[id]['title'] = title
-    txt_data[id]['author'] = author
-    txt_data[id]['publication_date'] = publication_date
-    txt_data[id]['text'] = text
+
+    txt_data.append({"id":id, "title":title, "text":text, "score":0})
+    # txt_data[id]['title'] = title
+    # txt_data[id]['author'] = author
+    # txt_data[id]['publication_date'] = publication_date
+    # txt_data[id]['text'] = text
+    # txt_data[id]['score'] = 0
+
+
+tokenized_corpus = [doc['text'].split(" ") for doc in txt_data]
+bm25 = BM25Okapi(tokenized_corpus)
+
+query = "what similarity laws must be obeyed when constructing aeroelastic models of heated high speed aircraft"
+tokenized_query = query.split(" ")
+
+doc_scores = bm25.get_scores(tokenized_query)
+
+for i in range(len(txt_data)):
+    txt_data[i]['score'] = doc_scores[i]
+ 
+def get_score(doc):
+    return doc.get('score')
+
+txt_data.sort(key=get_score, reverse=True)
+
+top10 = []
+for doc in txt_data[:10]:
+    top10.append(doc)
+
