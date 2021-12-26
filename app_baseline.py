@@ -1,5 +1,5 @@
 import re
-from rank_bm25 import BM25Plus
+from rank_bm25 import BM25Okapi
 
 PATH_TO_CRAN_TXT = './data/cran.all.1400'
 PATH_TO_CRAN_QRY = './data/cran.qry'
@@ -31,7 +31,7 @@ def rank_docs(q, corpus, top_n):
     docs = corpus
 
     tokenized_corpus = [doc['text'].split(" ") for doc in docs]
-    bm25 = BM25Plus(tokenized_corpus)
+    bm25 = BM25Okapi(tokenized_corpus)
 
     tokenized_query = q.split(" ")
     doc_scores = bm25.get_scores(tokenized_query)
@@ -79,9 +79,12 @@ with open(PATH_TO_CRAN_REL, 'r') as f:
         l = line.split(" ")
         rel_data.append({"q_id": l[0], "d_id": l[1], "rel": l[2]})
 
-final_p = 0
-for q in qry_data:
-    final_p += get_map(q["query"], q["id"], 100)
-map = final_p/len(qry_data)
+experiments = [10, 20, 30, 40, 50, 100]
 
-print(map)
+for e in experiments:
+    final_p = 0
+    for q in qry_data:
+        final_p += get_map(q["query"], q["id"], e)
+    map = final_p/len(qry_data)
+
+    print("BM25Okapi", e, map)

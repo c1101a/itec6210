@@ -4,7 +4,7 @@ import numpy as np
 from scipy import spatial
 from nltk.sentiment import SentimentIntensityAnalyzer
 import re
-from rank_bm25 import BM25Plus
+from rank_bm25 import BM25Okapi
 import nltk
 nltk.download(["vader_lexicon"])
 
@@ -47,7 +47,7 @@ def rank_docs(q, corpus, top_n):
     qS = sia.polarity_scores(q)
 
     tokenized_corpus = [doc['text'].split(" ") for doc in docs]
-    bm25 = BM25Plus(tokenized_corpus)
+    bm25 = BM25Okapi(tokenized_corpus)
 
     tokenized_query = q.split(" ")
     doc_scores = bm25.get_scores(tokenized_query)
@@ -75,7 +75,7 @@ def rank_docs(q, corpus, top_n):
 
 
     for doc in doc_ranks:
-        doc["final"] = (3*doc["bm25_rank"] + .2*doc["sent_rank"])
+        doc["final"] = (doc["bm25_rank"] + .2*doc["sent_rank"])
     
     doc_ranks.sort(key=get_final, reverse=False)
 
@@ -118,8 +118,17 @@ with open(PATH_TO_CRAN_REL, 'r') as f:
         l = line.split(" ")
         rel_data.append({"q_id": l[0], "d_id": l[1], "rel": l[2]})
 
-final_p = 0
-for q in qry_data:
-    final_p += get_map(q["query"], q["id"], 100)
-map = final_p/len(qry_data)
-print(map)
+# final_p = 0
+# for q in qry_data:
+#     final_p += get_map(q["query"], q["id"], 100)
+# map = final_p/len(qry_data)
+# print(map)
+experiments = [10, 20, 30, 40, 50, 100]
+
+for e in experiments:
+    final_p = 0
+    for q in qry_data:
+        final_p += get_map(q["query"], q["id"], e)
+    map = final_p/len(qry_data)
+
+    print("BM25Okapi", e, map)
